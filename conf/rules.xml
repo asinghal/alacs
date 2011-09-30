@@ -1,0 +1,6 @@
+<rules>
+  <rule className="com.github.alacs.patterns.AlacsPattern001" enabled="true" />
+  <rule className="com.github.alacs.patterns.AlacsPattern002" enabled="true" />
+  <rule className="com.github.alacs.patterns.AlacsPattern003" enabled="true" />
+  <rule className="com.github.alacs.patterns.UnusedPrivateDefs" enabled="true" />
+</rules>

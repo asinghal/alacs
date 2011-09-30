@@ -11,7 +11,7 @@ abstract class PatternDetector(global: Global) {
   val pattern: BugPattern
 
   def report(bug: Bug): Option[Bug] = {
-    global.reporter.info(bug.pos, bug.pat.toString, false)
+    global.reporter.warning(bug.pos, bug.pat.toString)
     Some(bug)
   }
 

@@ -19,10 +19,10 @@ class ParserComponent(val global: Global) extends PluginComponent {
     import java.lang.reflect.Constructor
 
     override def name = "alacs parser phase"
+    val patterns: List[Constructor[PatternDetector]] = Reflector.discoverPatterns()
+        
     override def apply(unit: CompilationUnit) {
 
-      val patterns: List[Constructor[PatternDetector]] =
-        Reflector.discoverPatterns()
       for (tree <- unit.body) {
         try {
           val bugs: List[Bug] = patterns flatMap { con =>
