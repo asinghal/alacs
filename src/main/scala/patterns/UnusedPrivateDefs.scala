@@ -26,22 +26,35 @@ class UnusedPrivateDefs(global: Global) extends PatternDetector(global)  {
     tree match {
       case tree@ClassDef(_,_,_,_) => analyzeBlock(tree)
       case tree@ModuleDef(_,_,_) => analyzeBlock(tree)
+      case tree@DefDef(_,_,_,_,_,_) => analyzeBlock(tree, true)
 
       case _ => None
     }
   }
 
-  private def analyzeBlock(tree: Tree) = {
+  private def analyzeBlock(tree: Tree, insideMethod: Boolean = false) = {
     var bug: Option[Bug] = None
 
     var privateMethods = Map[String, Bug]()
-    
+
     // first pass: collect all private methods' names
     if (!tree.children.isEmpty) {
       // *** NOTE: THIS NEEDS TO BE FIXED. CAN NOT ASSUME THAT WE WILL HAVE NODES ***
-      tree.children(0).children.foreach {
+      val treeRoot = if (!insideMethod) tree.children(0) else {
+        var b = tree
+        tree.children.foreach {
+          subtree => subtree match {
+            case Block(_,_) => b = subtree
+            case _ => 
+          }
+        }
+
+        b
+      }
+
+      treeRoot.children.foreach {
         subtree => subtree match {
-          case DefDef(m: Modifiers, n, _, vparamss, _, _) => if (m.isPrivate) {
+          case DefDef(m: Modifiers, n, _, vparamss, _, _) => if (m.isPrivate || insideMethod) {
             // method info should be stored with param types, but how would we infer the type at call in case of implicits?!
             // println(vparamss.map{ _.map { _.toString.split(" ")(2) } }.mkString)
             privateMethods = privateMethods.updated(n.toString, Bug(pattern, subtree.pos));
@@ -58,7 +71,7 @@ class UnusedPrivateDefs(global: Global) extends PatternDetector(global)  {
       }
 
       // second pass: look for references
-      tree.children(0).children.foreach { lookForReferences }
+      treeRoot.children.foreach { lookForReferences }
     }
 
     privateMethods.keys.foreach { key => bug = report(privateMethods(key)) }
