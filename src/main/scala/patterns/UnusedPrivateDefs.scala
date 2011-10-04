@@ -19,6 +19,7 @@ class UnusedPrivateDefs(global: Global) extends PatternDetector(global)  {
   import global._
 
   override val pattern = BugPattern(4, BugInfo("unused private def"))
+  val pattern1 = BugPattern(4, BugInfo("unused private variable"))
 
   override def analyzeTree(tree: GTree) = {
     val bug = Bug(pattern, tree.pos)
@@ -36,15 +37,16 @@ class UnusedPrivateDefs(global: Global) extends PatternDetector(global)  {
     var bug: Option[Bug] = None
 
     var privateMethods = Map[String, Bug]()
+    var privateVariables = Map[String, Bug]()
 
     // first pass: collect all private methods' names
     if (!tree.children.isEmpty) {
-      // *** NOTE: THIS NEEDS TO BE FIXED. CAN NOT ASSUME THAT WE WILL HAVE NODES ***
-      val treeRoot = if (!insideMethod) tree.children(0) else {
+      val treeRoot = {
         var b = tree
         tree.children.foreach {
           subtree => subtree match {
-            case Block(_,_) => b = subtree
+            case Template(_,_,_) => if (!insideMethod) b = subtree
+            case Block(_,_) => if (insideMethod) b = subtree
             case _ => 
           }
         }
@@ -54,10 +56,13 @@ class UnusedPrivateDefs(global: Global) extends PatternDetector(global)  {
 
       treeRoot.children.foreach {
         subtree => subtree match {
-          case DefDef(m: Modifiers, n, _, vparamss, _, _) => if (m.isPrivate || insideMethod) {
+          case DefDef(m: Modifiers, n, _, vparamss, _, _) => if (!m.isImplicit && (m.isPrivate || insideMethod)) {
             // method info should be stored with param types, but how would we infer the type at call in case of implicits?!
             // println(vparamss.map{ _.map { _.toString.split(" ")(2) } }.mkString)
-            privateMethods = privateMethods.updated(n.toString, Bug(pattern, subtree.pos));
+            privateMethods = privateMethods.updated(n.toString, Bug(pattern, subtree.pos))
+          }
+          case ValDef(m: Modifiers, n,_,_) => if (!m.isImplicit && n.toString.trim != "_" && (m.isPrivate || insideMethod)) {
+            privateVariables = privateVariables.updated(n.toString, Bug(pattern1, subtree.pos))
           }
           case _ => // ignore
         }
@@ -65,7 +70,7 @@ class UnusedPrivateDefs(global: Global) extends PatternDetector(global)  {
 
       def lookForReferences(subtree: Tree) {
         subtree match {
-          case Ident(name) => privateMethods -= name.toString
+          case Ident(name) => privateMethods -= name.toString; privateVariables -= name.toString
           case _ => subtree.children.foreach { lookForReferences }
         }
       }
@@ -75,6 +80,7 @@ class UnusedPrivateDefs(global: Global) extends PatternDetector(global)  {
     }
 
     privateMethods.keys.foreach { key => bug = report(privateMethods(key)) }
+    privateVariables.keys.foreach { key => bug = report(privateVariables(key)) }
 
     bug
   }
