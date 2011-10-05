@@ -3,6 +3,7 @@
 <!--<property name="scala.home" value="" />-->
 <property name="sources.dir" value="${basedir}/src/main/scala" />
 <property name="resources.dir" value="${basedir}/src/main/resources" />
+<property name="conf.dir" value="${basedir}/conf" />
 <property name="build.dir" value="${basedir}/target/classes" />
 
 	<target name="-init">
@@ -34,6 +35,9 @@
       </scalac>
 	  <copy todir="${build.dir}">
 	    <fileset dir="${resources.dir}" includes="**/*" />
+	  </copy>
+	  <copy todir="${build.dir}">
+	    <fileset dir="${conf.dir}" includes="**/*" />
 	  </copy>
 	  
 	  <jar destfile="${basedir}/lib/alacs-0.1_${scala.version}.jar"
