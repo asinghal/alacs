@@ -2,7 +2,7 @@ package com.github.alacs
 
 import java.text.DecimalFormat
 
-import scala.tools.nsc.util.Position
+import scala.reflect.internal.util.Position
 
 case class BugPattern(bugId: Int, info: BugInfo) {
 

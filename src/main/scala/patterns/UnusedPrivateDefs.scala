@@ -6,7 +6,6 @@
 package com.github.alacs.patterns;
 
 import scala.tools.nsc.Global
-import scala.reflect.generic._
 
 import com.github.alacs.{Bug, BugInfo, BugPattern}
 
